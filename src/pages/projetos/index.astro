@@ -1,0 +1,48 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { profile } from '../../data/profile';
+---
+<Layout title="Projetos" description="Repositórios e experimentos do meu GitHub."><section class="page-intro"><p class="eyebrow">LABORATÓRIO / PROJETOS</p><h1>Ideias que<br /><span class="gradient">viraram código.</span></h1><p>Uma seleção de projetos e experimentos, direto do GitHub.</p>{profile.github && <a class="text-link" href={`https://github.com/${encodeURIComponent(profile.github)}`} target="_blank" rel="noopener noreferrer">Explorar meu GitHub ↗</a>}</section><section class="section compact" aria-label="Repositórios"><div id="repositories" class="repo-grid" data-user={profile.github} data-featured={JSON.stringify(profile.featuredRepos)}><p class="empty" role="status">{profile.github ? 'Buscando projetos no GitHub…' : 'Os primeiros projetos vão aparecer aqui em breve.'}</p></div><noscript><p>Ative o JavaScript para carregar os cards do GitHub.</p></noscript></section></Layout>
+<script>
+  interface Repo { name: string; description: string | null; html_url: string; language: string | null; stargazers_count: number; forks_count: number; fork: boolean; archived: boolean }
+  const container = document.querySelector<HTMLElement>('#repositories');
+  const user = container?.dataset.user;
+  if (container && user) {
+    const message = (text: string) => { const p = document.createElement('p'); p.className = 'empty'; p.setAttribute('role', 'status'); p.textContent = text; container.replaceChildren(p); };
+    const request = async (path: string) => {
+      const response = await fetch(`https://api.github.com/${path}`, { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(12000) });
+      if (!response.ok) throw new Error(String(response.status));
+      return response.json();
+    };
+    try {
+      const selected: string[] = JSON.parse(container.dataset.featured || '[]');
+      let repos: Repo[];
+      if (selected.length) {
+        const results = await Promise.allSettled(selected.slice(0, 6).map(name => request(`repos/${encodeURIComponent(user)}/${encodeURIComponent(name)}`)));
+        repos = results.flatMap(result => result.status === 'fulfilled' ? [result.value as Repo] : []);
+        if (!repos.length) throw new Error('Repos indisponíveis');
+      } else {
+        const all: Repo[] = [];
+        for (let page = 1; ; page++) {
+          const batch: Repo[] = await request(`users/${encodeURIComponent(user)}/repos?per_page=100&type=owner&page=${page}`);
+          all.push(...batch);
+          if (batch.length < 100) break;
+        }
+        repos = all.filter(repo => !repo.fork && !repo.archived).sort((a,b) => b.stargazers_count-a.stargazers_count || a.name.localeCompare(b.name)).slice(0,6);
+      }
+      container.replaceChildren();
+      for (const repo of repos) {
+        const card = document.createElement('a'); card.className = 'repo-card';
+        card.href = `https://github.com/${encodeURIComponent(user)}/${encodeURIComponent(repo.name)}`; card.target = '_blank'; card.rel = 'noopener noreferrer';
+        const icon = document.createElement('span'); icon.className = 'repo-icon'; icon.textContent = '⌘';
+        const title = document.createElement('h2'); title.textContent = repo.name;
+        const description = document.createElement('p'); description.textContent = repo.description || 'Explore o código e conheça o projeto.';
+        const meta = document.createElement('div'); meta.className = 'repo-meta';
+        const language = document.createElement('span'); language.textContent = repo.language || 'Código';
+        const stats = document.createElement('span'); stats.textContent = `☆ ${repo.stargazers_count} · Forks ${repo.forks_count} ↗`;
+        meta.append(language, stats); card.append(icon, title, description, meta); container.append(card);
+      }
+      if (!repos.length) message('Ainda não há repositórios públicos para exibir.');
+    } catch { message('Não foi possível carregar os projetos agora. Tente novamente mais tarde ou acesse o GitHub pelo link acima.'); }
+  }
+</script>

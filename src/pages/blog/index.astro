@@ -1,0 +1,7 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PostList from '../../components/PostList.astro';
+import { getCollection } from 'astro:content';
+const posts = (await getCollection('blog', ({data}) => !data.draft)).sort((a,b) => b.data.date.valueOf()-a.data.date.valueOf());
+---
+<Layout title="Blog" description="Notas, ideias e aprendizados pelo caminho."><section class="page-intro"><p class="eyebrow">CADERNO ABERTO / BLOG</p><h1>Aprender.<br /><span class="gradient">Compartilhar.</span></h1><p>Notas, descobertas e ideias que merecem mais do que ficar em uma aba aberta.</p></section><section class="section compact"><PostList posts={posts} />{!posts.length && <p class="empty">As primeiras notas estão a caminho.</p>}</section></Layout>

@@ -1,0 +1,30 @@
+---
+import '../styles/global.css';
+import { profile } from '../data/profile';
+import { url } from '../lib/paths';
+interface Props { title: string; description?: string }
+const { title, description = profile.intro } = Astro.props;
+const nav = [['', 'Home'], ['blog/', 'Blog'], ['projetos/', 'Projetos']];
+const current = Astro.url.pathname.replace(/\/$/, '');
+---
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0b0c12" />
+    <link rel="icon" href={url('favicon.svg')} type="image/svg+xml" />
+    {Astro.site && Astro.site.hostname !== 'example.com' && <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />}
+    <title>{title} · {profile.name}</title>
+  </head>
+  <body>
+    <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+    <header class="header wrap">
+      <a class="brand" href={url()} aria-label="Página inicial"><span class="brand-icon">p.</span>{profile.name}<span class="muted"> / portfolio</span></a>
+      <nav aria-label="Principal">{nav.map(([path, label]) => <a href={url(path)} aria-current={current === url(path).replace(/\/$/, '') ? 'page' : undefined}>{label}</a>)}</nav>
+    </header>
+    <main id="conteudo" class="wrap"><slot /></main>
+    <footer class="wrap footer"><span>© {new Date().getFullYear()} {profile.name}</span><span>Feito com curiosidade e Astro <span class="accent">✦</span></span><a href={url('blog/')}>Notas pelo caminho ↗</a></footer>
+  </body>
+</html>

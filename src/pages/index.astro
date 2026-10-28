@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PostList from '../components/PostList.astro';
+import { profile } from '../data/profile';
+import { url } from '../lib/paths';
+import { getCollection } from 'astro:content';
+import { existsSync } from 'node:fs';
+const photo = existsSync('public/images/profile.jpg');
+const posts = (await getCollection('blog', ({data}) => !data.draft)).sort((a,b) => b.data.date.valueOf()-a.data.date.valueOf()).slice(0,3);
+---
+<Layout title="Home">
+  <section class="hero">
+    <div><p class="eyebrow"><span class="dot"></span> UM POUCO DE MIM, NA WEB</p><h1>Olá, eu sou<br /><span class="gradient">{profile.name}.</span></h1><p class="hero-role">{profile.role}</p><p class="hero-description">{profile.intro}</p><div class="actions"><a class="button primary" href={url('projetos/')}>Explorar projetos <span>↗</span></a><a class="button" href={url('blog/')}>Ler o blog →</a></div></div>
+    <div class="portrait-frame"><div class="portrait">{photo ? <img src={url('images/profile.jpg')} alt={`Foto de ${profile.name}`} width="400" height="460" /> : <div class="portrait-placeholder" aria-label="Espaço reservado para foto"><span>{profile.name.slice(0,1)}</span><small>Um rosto por trás do código.</small></div>}</div><div class="portrait-caption"><span class="dot"></span> construindo, aprendendo, compartilhando.</div><span class="orbit" aria-hidden="true">✦</span></div>
+  </section>
+  <section class="about section"><div><p class="eyebrow">01 / SOBRE</p><h2>Além das linhas<br />de código.</h2></div><div><p class="large-copy">{profile.about}</p><div class="tags">{profile.skills.map(skill => <span>{skill}</span>)}</div>{profile.email && <a class="text-link" href={`mailto:${profile.email}`}>Vamos conversar ↗</a>}</div></section>
+  <section class="section"><div class="section-heading"><div><p class="eyebrow">02 / LABORATÓRIO</p><h2>Ideias em construção.</h2></div><a class="text-link" href={url('projetos/')}>Ver projetos ↗</a></div><a href={url('projetos/')} class="project-banner"><span class="code-mark" aria-hidden="true">&lt;/&gt;</span><div><h3>Do primeiro commit à próxima ideia.</h3><p>Explore os repositórios, experimentos e projetos que fazem parte da minha jornada.</p></div><span class="arrow" aria-hidden="true">↗</span></a></section>
+  <section class="section"><div class="section-heading"><div><p class="eyebrow">03 / CADERNO ABERTO</p><h2>Últimas notas.</h2></div><a class="text-link" href={url('blog/')}>Todos os artigos ↗</a></div><PostList posts={posts} /></section>
+</Layout>
